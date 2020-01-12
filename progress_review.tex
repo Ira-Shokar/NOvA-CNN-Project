@@ -1,0 +1,216 @@
+\documentclass[11pt]{article}
+
+\usepackage{braket}
+\usepackage{physics}
+\usepackage{graphicx}
+
+\addtolength{\oddsidemargin}{-0.75in}
+\addtolength{\evensidemargin}{-0.75in}
+\addtolength{\textwidth}{1.25in}
+
+\addtolength{\topmargin}{-0.5in}
+\addtolength{\textheight}{0.5in}
+
+\usepackage{indentfirst}
+
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
+	\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness here
+	
+	\center % Centre everything on the page
+	
+	
+	
+	%------------------------------------------------
+	%	Headings
+	%------------------------------------------------
+	
+	\textsc{\LARGE Progress Review}\\[1.5cm] % Main heading such as the name of your university/college
+	
+	\textsc{\Large Theoretical Physics BSc Project}\\[0.5cm] % Major heading such as course name
+	
+	\textsc{\large University College London}\\[0.5cm] % Minor heading such as course title
+	
+	%------------------------------------------------
+	%	Title
+	%------------------------------------------------
+	
+	\HRule\\[0.4cm]
+	
+	{\huge\bfseries Deep-Learning Classifier Robustness in Neutrino Experiments}\\[0.2cm] % Title of your document
+	
+	\HRule\\[1.5cm]
+	
+	%------------------------------------------------
+	%	Author(s)
+	%------------------------------------------------
+	
+	\begin{minipage}{0.4\textwidth}
+		\begin{flushleft}
+			\large
+			\textit{Author}\\
+			I.J.S. \textsc{Shokar - 17066988} % Your name
+		\end{flushleft}
+	\end{minipage}
+	~
+	\begin{minipage}{0.4\textwidth}
+		\begin{flushright}
+			\large
+			\textit{Supervisor}\\
+			Dr. C \textsc{Backhouse} % Supervisor's name
+		\end{flushright}
+	\end{minipage}
+	
+	% If you don't want a supervisor, uncomment the two lines below and comment the code above
+	%{\large\textit{Author}}\\
+	%John \textsc{Smith} % Your name
+	
+	%------------------------------------------------
+	%	Date
+	%------------------------------------------------
+	
+	\vfill\vfill\vfill % Position the date 3/4 down the remaining page
+	
+	{\large\today} % Date, change the \today to a set date if you want to be precise
+	
+	%------------------------------------------------
+	%	Logo
+	%------------------------------------------------
+	
+	%\vfill\vfill
+	%\includegraphics[width=0.2\textwidth]{placeholder.jpg}\\[1cm] % Include a department/university logo - this will require the graphicx package
+	 	
+\end{titlepage}
+
+\newcounter{lastnote}
+\newenvironment{scilastnote}{%
+\setcounter{lastnote}{\value{enumiv}}%
+\addtocounter{lastnote}{+1}%
+\begin{list}%
+{\arabic{lastnote}.}
+{\setlength{\leftmargin}{.22in}}
+{\setlength{\labelsep}{.5em}}}
+{\end{list}}
+
+\section*{Introduction}
+
+The project I am working on is looking at the robustness of classifiers used to identify interactions from neutrino experiments. The initial couple of weeks of the project were orientated around the literature review, and better understanding the neural networks that we will be looking at and the two Monte Carlo (MC) simulations, GENIE and GIBUU, that produce the training data for the machine learning algorithms at the NOvA experiment, at Fermilab. 
+
+The classifier used for particle identification is a Convolutional Neural Network (CNN), whereby we can treat the detector data is an image. The CNN used at NOvA can be seen as a ‘black-box’, as the weighing of feature maps cannot be interpreted by humans. Because of this, understanding what exactly the network is using to make its classification predictions cannot be extracted.
+
+One concern with using a model that cannot be understood is that the network may be overfitting to any idiosyncrasies of the training models, rather than being general to model real interactions correctly. This would be a problem as the MC generators each model the events in a unique way, while neither of them perfectly model reality. By overfitting to these errors the model would not be able to generate well to other generators, or to detector data. 
+
+To determine whether the classifier is overfitting to the statistics of the model that it was trained on we are training and testing the CNN on data from two different generators, GENIE- which simulates the initial iteration of a neutrino with nuclei in the detector and the resulting scattered products to the surface of the nucleus and GiBUU- which simulates the evolution of a many-body system in the presence of potentials and a collision term, with the addition of neutrino-induced interactions. 
+
+
+
+\section*{Software}
+
+The initial part of the project involved becoming familiar with the various technologies that are being used  to analyse the data at NOvA. The data and software used to analyse the data are stored on the High Energy Physics group’s Linux cluster of machines, running Scientifc Linux, meaning initially needed to understand the Linux command line in order to navigate the file system and software packages. 
+
+NOvASoft is a software package, developed by Fermilab, that builds on the ROOT data analysis software, developed by CERN. CafAna is the framework that NOvASoft uses used to run functions and produce plots by specifying cuts on the data. The entire analysis framework is written in C++, a language I had no prior experience of, so a proportion of the time was spent trying to interpret pre existing C++ scripts in the NOvAsoft, as well as the doxygen documentation. 
+
+
+\section*{Training data}
+
+The MC data is stored as ROOT files, as well as HDF5 files, and it was the HDF5 files that I used to extract the relevant training data. The image data comes in the form of an array and the interaction targets in the form of a ‘pdg’ value. The event labels are stored as part of ‘mc’ branch of the HDF5 file, while the input images are stored in a ‘training’ branch. 
+
+I am assuming that the data stored in these HDF5 files has already undergone some sort of preselection cut as the number of subevents stored in the ‘mc’ branch is larger than that of the ‘training’ branch. Because of this, the events could not simply be matched up based on their index value, but on the following values: ‘run’, ‘subrun’, ‘evt’ (event), ‘subevt’ (sub event) and ‘cycle’ to indicate which subevent is being referenced. 
+
+After reshaping the image maps from a 1D array to two 100 x 80 pixel images representing the z-x and z-y planes of the detector, I wrote the images to a 4D tensor with dimensions:
+{\begin{itemize}
+ \vspace*{-3mm}
+\item Event index (determined simply from the order that the images were appended).
+ \vspace*{-3mm}
+\item Plane ( z-x or z-y ).
+ \vspace*{-3mm}
+\item x or y value.
+ \vspace*{-3mm}
+\item z value.
+ \vspace*{-3mm}
+  \end{itemize}}
+    
+The HDF5 files also store data about each event, and this was used to apply the basic quality and preselection cuts. The cuts were outlined in the NOvA doxygen with the Nu Mu cuts as kNumuQuality, kNumuContainFD2017 and the Nu E Cuts as ‘kNue2017NDFiducial’,  ‘kNue2017NDContain’ , ‘kNue2017NDFrontPlanes’ , ‘kNue2017NDNHits’, ‘kNue2018NDEnergy’,  ‘kNue2017NDProngLength’.
+
+Much like the majority of the code that has been written already for the NOvA project and the NOvAsoft packages these are all written in C++ and use the branch like structure of the ROOT files. A similar package has been developed for Python with a loader for HDF5 files, called PANDAna, that uses the data frame structure of the Pandas package. However, I am unfamiliar with the syntax associated with the package and the documentation seems to focus on network analysis, so I deemed it a simpler option to simply implement the cuts using if statements with a loop over all the events. While this meant that the computational process is much slower, I did not see that as a problem as the cuts need only be applied once, for each generator) and the events that pass can be stored and then used as model inputs from then onwards. In order to verify that the cuts that I had made were correct, a function had been written in NOvASoft, ‘MakeEventListFile’, that listed the events that pass a specific cut, in order to be able to cross reference with the results I obtained.
+
+
+It may be useful to learn and then implement the PANDAna approach if more training data needs to be used in the future, or if the network was to be trained dynamically in the future.
+
+While Keras does have a C++ API, as well as the option to export a model from Python, however with Python being the language I am more comfortable with I decided that it was worthwhile interpreting the cuts and implementing them in Python rather than using the pre-existing C++ functions.
+
+
+\section*{Models}
+
+The data that passed the preselection cuts, now in the form of image maps and labels indicating the interaction type, were now able to be passed to a model for training. Initially this was done on a smaller scale, using just 10 of the available 1150 files in order to ensure that all components were working properly. The interaction labels are one hot encoded into three classes: neutral current, charged current  $\nu_e$  and  $\overline{\nu_e}$ , charged charged  $\nu_\mu$  and  $\overline{\nu_\mu}$ as the classifier is to predict values into one of these categories.
+
+Initially I produced a small network containing 6 linear blocks containing convolution, max pooling and drop out layers in Keras. I did this to understand whether there were any errors in the formatting of the data as I was familiar with what was required for my rudimentary model. This worked with no hiccups, although the classifier was not particularly accurate. 
+
+The next stage was to run the small dataset using the MobileNet architecture, developed by Google. Currently at NOvA the ResNet architecture is being used, however the computing power available at NOvA is far greater to that available to me, meaning the training would take significantly longer. MobileNet is designed for implementation on mobile devices, and thus reduced the training time significantly. Literature stated that MobileNet does experience a reduction in classification performance, however the increase in performance time is significant and more valuable to a project with a limited timeframe, which is looking to see if new methods can be implemented, as opposed to producing a final production model.
+
+The network produces probabilities for each category indicating the confidence level that the network has in belonging to each label class. By taking the category that the model is most confident of we can compare this to the MC truth data to obtain a naive metric using a classification matrix. 
+
+More valuable metric the probability ditrubtions…… Accuracy, training, purity, efficiency 
+
+When using the mobilnet architecture with the small subset of the data, we produced some preliminary results….
+
+
+\section*{Alternative}
+
+While it was possible to write the required data to an array when working with a relatively small dataset, this was not possible when using all of the available files in the directory, 1150 Genie HDF5 files, so a data frame was produced for the events that passed the cuts with the following columns:
+{\begin{itemize}
+ \vspace*{-3mm}
+\item ‘run’ ,
+ \vspace*{-3mm}
+\item ‘subrun’,
+ \vspace*{-3mm}
+\item ‘evt’ (event),
+ \vspace*{-3mm}
+\item ‘subevt’ (sub event),
+ \vspace*{-3mm}
+ \item ‘cycle’,
+ \vspace*{-3mm}
+\item ‘train\_index’:  location index within the ‘training branch’ of the image,
+ \vspace*{-3mm}
+\item ‘label’ : pdg interaction value,
+ \vspace*{-3mm}
+\item ‘file’: path to the relevant HDF5 file. 
+ \vspace*{-3mm}
+  \end{itemize}}
+
+The data frames were then concatenated to produce three, one for training containing 15,484 subevents, one for training validation containing 5282 subevents, and one for testing the model containing …. subevents. 
+
+As the data was not stored locally, the data could not be loaded into the model all at once, a generator method is used to load the data to the model in various batch sizes. This sources the image data from the relevant HDF5 file using the location stored in the ‘file’ column of the data frame. Then uses the 'train\_index' value from that row to identify the array in question. This is then reshaped the same way as before and written to a 4D tensor identical to the one for the entire dataset, with the only difference being the event index dimension is the size of the batch size that is specified, rather than the entire dataset. The default batch size is 32, as is the case with the results produced by NOVA PAPER. The target values are again one-hot encoded based on the ‘label’ value for the row.
+This generation takes place for the training and validation data frames, and the network is trained, taking a number of days, before the test data is evaluated.
+
+Results
+
+It must be noted that there were a number of learning curves on my part  
+
+
+\section*{Term 2 Plan}
+
+Initially the first few weeks of term will look at optimising the current network, to find the hyperparameters that yield the best results. As seen from the results produced, the test loss varies significantly and a variable learning rate optimiser, such as ‘Adam’ as well as a momentum term may avoid the function finding local minima.
+
+Then we will look at applying the network, training and testing process, to the GIBUU simulations. These vary slightly as the GIBUU training needed to be weighted, meaning finding a way to implement this in Keras.
+
+By February, we should be in a position to see if we can increase the robustness of network using data from both domains together. With the next stage to apply to Domain Adversarial training using both simulations. I would hope that by the end of February we would be in a stage to apply the domain adversarial training to the detector data, and be able to analyse the results to see if any improvements in accuracy over various domains are made, before writing up the project and results for the end of March deadline.
+
+
+
+
+%\begin{figure}[t]
+% \centering
+ %\includegraphics[width=100mm]{../../Desktop/Images/EventTopologies_with_interactions.png}
+ 
+% Figure 1. \textit{Plot showing three of the event topologies, for charged-current muon and electron neutrinos as well as a charged-neutral interaction, with their associated Feynman diagrams, 'Singh' (2017).}
+%\end{figure}
+
+\end{document}
+
