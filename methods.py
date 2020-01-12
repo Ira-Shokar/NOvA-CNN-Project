@@ -52,10 +52,11 @@ def cuts(path):
             
             
 
-def train_mobilenetmodelv2(epochs=40,
+def train_mobilenetmodelv2(df_train,
+                           df_val,
+                           epochs=40,
                            batch_size = 32,
                            call_back_patience = 5,
-                           save_best = False,
                            name = "name"):
     
     """train_mobnetmodelv2
@@ -82,22 +83,13 @@ def train_mobilenetmodelv2(epochs=40,
     mobnetmodel.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False),
                         loss='categorical_crossentropy',metrics=['accuracy'])
     
-    checkpoint = ModelCheckpoint("best_model_{}.h5".format(name), monitor='val_loss', verbose=1,
-             save_best_only=True, mode='auto', period=1)
-    
-    if save_best==True:
-        history = mobnetmodel.fit_generator(generator=generator(batch_size, df_train, steps_per_epoch),
-                                            steps_per_epoch= steps_per_epoch, 
-                                            validation_data= generator(batch_size, df_val, val_steps_per_epoch),
-                                            validation_steps= val_steps_per_epoch,
-                                            epochs=epochs, callbacks = checkpoint)
-    else:
-        history = mobnetmodel.fit_generator(generator=generator(batch_size, df_train, steps_per_epoch),
-                                            steps_per_epoch= steps_per_epoch, 
-                                            validation_data= generator(batch_size, df_val, val_steps_per_epoch),
-                                            validation_steps= val_steps_per_epoch,
-                                            epochs=epochs, callbacks = callbacks)
-                 
+
+    history = mobnetmodel.fit_generator(generator=generator(batch_size, df_train, steps_per_epoch),
+                                        steps_per_epoch= steps_per_epoch, 
+                                        validation_data= generator(batch_size, df_val, val_steps_per_epoch),
+                                        validation_steps= val_steps_per_epoch,
+                                        epochs=epochs, callbacks = callbacks)
+                
     mobnetmodel.save_weights("weights_{}.h5".format(name))
     pkl.dump(history, open( "history_{}.pkl".format(name), "wb" ) )            
     
@@ -107,15 +99,15 @@ def train_mobilenetmodelv2(epochs=40,
 
 def train(path, epochs= 200, batch_size = 32, call_back_patience = 20, name = '32_Adam'):
 
-    df1 = open_df(1)
-    df2 = open_df(2)
-    df3 = open_df(3)
-    df4 = open_df(4)
-    df5 = open_df(5)
-    df6 = open_df(6)
-    df7 = open_df(7)
-    df10 = open_df(10)
-    df11 = open_df(11)
+    df1 = open_df(path, 1)
+    df2 = open_df(path, 2)
+    df3 = open_df(path, 3)
+    df4 = open_df(path, 4)
+    df5 = open_df(path, 5)
+    df6 = open_df(path, 6)
+    df7 = open_df(path, 7)
+    df10 = open_df(path, 10)
+    df11 = open_df(path, 11)
 
     train = [df1, df2, df3, df4, df5, df6, df7]
     val = [df10, df11]
@@ -125,34 +117,10 @@ def train(path, epochs= 200, batch_size = 32, call_back_patience = 20, name = '3
     df_val = pd.concat(val)
     df_val.index = range(len(df_val['file']))
 
-    model, history = train_mobilenetmodelv2(epochs= epochs,
+    model, history = train_mobilenetmodelv2(df_train,
+                                            df_val,
+                                            epochs= epochs,
                                             batch_size = batch_size,
                                             call_back_patience = call_back_patience,
                                             name = name)
     
-    
-    
-def test(path, batch_no = 32, files):
-    
-    for i in files:   
-
-        df8 = open_df(8)
-        df9 = open_df(9)
-        test = [df8, df9]
-
-        df_test = pd.concat(test)
-        df_test.index = range(len(df_test['file']))
-        steps_per_epoch = round(len(df_test['file'])/(batch_no)-1)
-
-        model = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=3)
-        model.load_weights('/home/ishokar/december_test/' + i)
-
-        index_list = []
-        probabilities = model.predict_generator(test_generator(batch_no, df_test), steps = steps_per_epoch)
-        test_labels_list = test_labels(df_test, index_list)
-
-        with open('probabilities_{}.pkl'.format(i[:-3]),'wb') as f1:
-                        pkl.dump(probabilities, f1) 
-
-        with open('test_labels_list_{}.pkl'.format(i[:-3]),'wb') as f1:
-                        pkl.dump(test_labels_list, f1)
