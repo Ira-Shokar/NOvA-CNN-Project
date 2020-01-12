@@ -7,23 +7,8 @@ import keras
 from keras import backend as K, optimizers
 
 from keras.models import Model
-from keras.layers import Input
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import Reshape
-from keras.layers import Activation
-from keras.layers import BatchNormalization
-from keras.layers import MaxPooling2D
-from keras.layers import GlobalAveragePooling2D
-from keras.layers import GlobalMaxPooling2D
-from keras.layers import DepthwiseConv2D
-from keras.layers import Conv2D
-from keras.layers import Lambda
-from keras.layers import ReLU
-from keras.layers import GaussianDropout
-from keras.layers import add
-from keras.layers import concatenate
-from keras.layers import multiply
+from keras.layers import Input, Dense, Dropout, Reshape, Activation, BatchNormalization, GaussianDropout, MaxPooling2D, Lambda
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, DepthwiseConv2D, Conv2D, add, ReLU, concatenate, multiply
 from keras.regularizers import l2
 from keras.utils import conv_utils
 from keras.utils.data_utils import get_file
