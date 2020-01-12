@@ -133,25 +133,26 @@ def train(path, epochs= 200, batch_size = 32, call_back_patience = 20, name = '3
     
     
 def test(path, batch_no = 32, files):
+    
     for i in files:   
 
-    df8 = open_df(8)
-    df9 = open_df(9)
-    test = [df8, df9]
+        df8 = open_df(8)
+        df9 = open_df(9)
+        test = [df8, df9]
 
-    df_test = pd.concat(test)
-    df_test.index = range(len(df_test['file']))
-    steps_per_epoch = round(len(df_test['file'])/(batch_no)-1)
+        df_test = pd.concat(test)
+        df_test.index = range(len(df_test['file']))
+        steps_per_epoch = round(len(df_test['file'])/(batch_no)-1)
 
-    model = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=3)
-    model.load_weights('/home/ishokar/december_test/' + i)
+        model = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=3)
+        model.load_weights('/home/ishokar/december_test/' + i)
 
-    index_list = []
-    probabilities = model.predict_generator(test_generator(batch_no, df_test), steps = steps_per_epoch)
-    test_labels_list = test_labels(df_test, index_list)
-    
-    with open('probabilities_{}.pkl'.format(i[:-3]),'wb') as f1:
-                    pkl.dump(probabilities, f1) 
-            
-    with open('test_labels_list_{}.pkl'.format(i[:-3]),'wb') as f1:
-                    pkl.dump(test_labels_list, f1)
+        index_list = []
+        probabilities = model.predict_generator(test_generator(batch_no, df_test), steps = steps_per_epoch)
+        test_labels_list = test_labels(df_test, index_list)
+
+        with open('probabilities_{}.pkl'.format(i[:-3]),'wb') as f1:
+                        pkl.dump(probabilities, f1) 
+
+        with open('test_labels_list_{}.pkl'.format(i[:-3]),'wb') as f1:
+                        pkl.dump(test_labels_list, f1)
