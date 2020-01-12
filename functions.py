@@ -372,29 +372,10 @@ def generator(batch_size, dataset, steps_per_epoch):
 
         
         
-def open_df(num):
+def open_df(path, num):
     with open(path+ 'df_{}.pkl'.format(num),'rb') as file:
         df = pkl.load(file)
     return df
-
-
-
-def test_generator(batch_size, dataset):
-    batch_images = np.zeros((batch_size, 2, 80, 100))
-    size = dataset.shape[0]
-    while True:
-        for i in range(batch_size):
-            index= random.randint(0,size-1)
-            while index in index_list:
-                index= random.randint(1,size)-1
-            index_list.append(index)
-            row = dataset.loc[index]
-            file= row['file']
-            images  = image(maps(file)[row['train_index']])
-            images= (images - np.min(images))/ (np.max(images) - np.min(images))
-            batch_images[i] = images
-            
-        yield batch_images
         
         
         
