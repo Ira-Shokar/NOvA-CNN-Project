@@ -1,4 +1,4 @@
-from funs import *
+from functions import *
 
 
 
