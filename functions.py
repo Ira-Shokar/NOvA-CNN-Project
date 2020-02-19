@@ -556,3 +556,63 @@ def test_generator(batch_size, steps_per_epoch, dataset, data='both', model_type
                     labels = []
                     weight_index = []
                     event_list = []  
+
+			
+def equal_data_generator(dataset, method):
+    dataframe = pd.DataFrame(columns=dataset.columns)
+    steps = 0
+    dataset = dataset.sample(frac=1).reset_index(drop=True)
+    a = b= c= d= e= 0
+
+
+    for index in range(len(dataset['file'])):
+        row = dataset.loc[index]
+        weight = float(row['weight'])
+        rand = 10*random.random()
+        rand2, rand3, rand4  = random.random(), random.random(), random.random()
+
+        if method == 'train':
+            val1 = 0.7529
+            val2 = 0.9762
+            val3 = 0.8876
+
+        elif method == 'val':
+            val1 = 0.8457
+            val2 = 0.9762
+            val3 = 0.8876
+	
+	elif method == 'test':
+            val1 = 0.6752
+            val2 = 0.9767
+            val3 = 0.8981
+
+        if ('gibuu' in str(row['file']) and weight<=rand) or \
+            (rand4 <= val1 and 'gibuu' in str(row['file'])) or\
+            (rand2 <= val2 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
+            (rand3 <= val3 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)):
+            steps+=1
+            pass
+
+
+        else:
+            images = image(maps(row['file'])[row['train_index']])
+            images = (images - np.min(images))/ (np.max(images) - np.min(images))
+
+            if abs(row['label']- 1) <=10**(-5):
+                a+=1
+            elif abs(row['label']- 2) <=10**(-5):
+                b+=1
+            elif abs(row['label']- 3) <=10**(-5):
+                c+=1
+
+            if '_genie_' in str(row['file']):
+                d+=1
+            elif 'gibuu' in str(row['file']):
+                e+=1
+
+            steps+=1
+            print('{} %, Nu_mu: {}, Nu_e: {}, NC: {}, Genie: {}, Gibuu: {},'.format(round(step*100/dataset_len, 3), c, b, a, d ,e))
+
+            dataframe.append(row)
+
+    return dataframe
