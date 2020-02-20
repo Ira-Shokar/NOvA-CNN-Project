@@ -7,6 +7,6 @@ Recently, new classifiers drawn from computer vision research have been deployed
 
 Because these techniques are very new, and the classifiers can be seen as something of a "black box" there are some concerns about the systematic robustness of the technique.
 
-This project is looking to attempt to train a classifier invarient to bias from the domain in which the Monte Carlo events are produced, as they are simulated by two different generators, using Domain-Adversarial Training of Neural Networks (Ganin et al, 2015).
+This project is looking as training a classifier invarient to bias from the domain in which the Monte Carlo events are produced, as they are simulated by two different generators, using Domain-Adversarial Training of Neural Networks (Ganin et al, 2015).
 
 The base Convolutional Neural Network Arhcitecture being used it MobileNetV2 (Sandler et all, 2018), with the Keras API being used in Python to train and test the network.
