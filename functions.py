@@ -93,6 +93,7 @@ def mu_cuts(f, file):
     nu mu cuts defined - "CAFAna/Cuts/NumuCuts2018.h"
         cuts used - kNumuQuality && kNumuContainFD2017
     """
+    files_list = [os.fsdecode(file) for file in folder if os.fsdecode(file).endswith(('.h5'))]
     cut_arr_mu = []
 
     ### kNumuQuality cut ###
@@ -104,7 +105,9 @@ def mu_cuts(f, file):
                 cut_arr_mu.append(s)
 
     cut = [encode_event(sel_remid, i) for i in len(en_numu['trkccE']) if en_numu['trkccE'][i]<=0]
-    [os.fsdecode(file) for file in folder if os.fsdecode(file).endswith(('.h5'))]
+    s = encode_event(cut, i)
+    if s not in cut_arr_mu:
+	cut_arr_mu.append(s)
 
     sel_remid = f['rec.sel.remid']
     for i in range(len(sel_remid['pid'])):
