@@ -1,7 +1,5 @@
 # NOvA-CNN-Project
-BSc Final Year Project being undertaken under the supervision of Dr. Chris Backhouse
-
-Deep-learning classifier robustness in neutrino experiments
+Deep-learning classifier robustness in neutrino experiments- BSc Final Year Project being undertaken under the supervision of Dr. Chris Backhouse.
 
 The NOvA experiment studies the oscillation of muon neutrinos into electron neutrinos, making precise measurements of the neutrino properties, and perhaps shedding light on the origin of the matter/antimatter asymmetry in our universe.
 
