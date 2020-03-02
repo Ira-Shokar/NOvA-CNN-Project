@@ -1,11 +1,12 @@
 from functions import *
 from mobilenetv2 import *
 from keras.models import Model
+from itertools import islice
+
 
 def cuts(path):
     """cuts
     Function that takes in an hdf5 file and applied multiple functions to :
-
     nu mu cuts defined - "CAFAna/Cuts/NueCuts2017.h"
         cuts used - kNue2017NDFiducial && kNue2017NDContain && kNue2017NDFrontPlanes
     """
@@ -53,76 +54,68 @@ def cuts(path):
 
 
 
-def train_mobilenetv2(df_train,
-                      df_val,
-                      data = 'both',
-                      train_type = 'default',
-                      epochs=50,
-                      dataset_percent = 0.01,
-                      batch_size = 32,
-                      call_back_patience = 10,
-                      learning_rate = 0.0001,
-                      model_optimiser = 'Adam',
-                      out_file_name = "name"):
+
+
+
+def train(path,
+          train_type = 'default',
+          epochs= 200,
+          batch_size = 32,
+          dataset_percent = 0.8,
+          call_back_patience = 10,
+          learning_rate = 0.001,
+          DANN_strength = 0.1
+          model_optimiser='SGD',
+          out_file_name = '32_SGD'):
 
     """train_mobnetmodelv2
     Function that compiles and trains the mobilenet network
-
     # Arguments/Hyperparamaters
         epochs: number of epochs,
         batch_size : batch size,
         learning_rate : learning rate,
         call_back_patience : number of epochs patience before stopping training if no improvement takes place,
         save_best : saves weights of the best model based on validation loss
-
     # Returns
 	mobnetmodel: trained model
         history : training statistics
     """
 
+    df_train = open_df(path, 'train_equal')
+    df_train.index = range(len(df_train['file']))
     steps_per_epoch = round(len(df_train['file'])/(batch_size)*dataset_percent)
+    
+    df_val = open_df(path, 'val_equal')
+    df_val.index = range(len(df_val['file']))
     val_steps_per_epoch = round(len(df_val['file'])/(batch_size)*dataset_percent)
-
-    callbacks = [EarlyStopping(monitor='accuracy', patience=call_back_patience)]
 
     if model_optimiser == 'SGD':
         opt= SGD(lr=learning_rate, momentum=0.9)
     elif model_optimiser == 'Adam':
         opt = Adam(learning_rate=learning_rate)
     else:
-	print('Not valid model_optimiser name')
+        print('Not valid model_optimiser name')
+
+    callbacks = [EarlyStopping(monitor='accuracy', patience=call_back_patience)]
 
     if train_type == 'dann':
-        mobnetmodel = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2)
+        mobnetmodel = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2, DANN_strength)
         mobnetmodel.compile(optimizer=opt, loss='categorical_crossentropy',metrics=['accuracy'])
 
-        history = mobnetmodel.fit_generator(generator=dann_generator(batch_size, steps_per_epoch, df_train),
-                                            steps_per_epoch= steps_per_epoch,
-                                            validation_data= dann_generator(batch_size, val_steps_per_epoch, df_val, val='val'),
-                                            validation_steps= val_steps_per_epoch,
-                                            epochs=epochs, callbacks = callbacks)
     elif train_type== 'default':
         mobnetmodel = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=3)
-        mobnetmodel.compile(optimizer=opt,
-                            loss='categorical_crossentropy',metrics=['accuracy'])
-
-        history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, data = 'data'),
-                                            steps_per_epoch= steps_per_epoch,
-                                            validation_data= generator(batch_size, val_steps_per_epoch, df_val, val='val', data = 'data'),
-                                            validation_steps= val_steps_per_epoch,
-                                            epochs=epochs, callbacks = callbacks)
+        mobnetmodel.compile(optimizer=opt, loss='categorical_crossentropy',metrics=['accuracy'])
 
     elif train_type == 'descr':
         mobnetmodel = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=2)
-        mobnetmodel.compile(optimizer=opt,
-                            loss='categorical_crossentropy',metrics=['accuracy'])
+        mobnetmodel.compile(optimizer=opt, loss='binary_crossentropy',metrics=['accuracy'])
 
-        history = mobnetmodel.fit_generator(generator=descriminator_generator(batch_size, steps_per_epoch, df_train),
-                                            steps_per_epoch= steps_per_epoch,
-                                            validation_data= descriminator_generator(batch_size, val_steps_per_epoch, df_val, val='val'),
-                                            validation_steps= val_steps_per_epoch,
-                                            epochs=epochs, callbacks = callbacks)
-
+    history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, train_type),
+                                        steps_per_epoch= steps_per_epoch,
+                                        validation_data= generator(batch_size, val_steps_per_epoch, df_val, val='val', train_type),
+                                        validation_steps= val_steps_per_epoch,
+                                        epochs=epochs,
+                                        callbacks = callbacks)
 
     mobnetmodel.save_weights("weights_{}.h5".format(out_file_name))
     history.model = None
@@ -132,113 +125,23 @@ def train_mobilenetv2(df_train,
 
 
 
-def train(path,
-          train_type = 'both',
-          epochs= 50,
-          batch_size = 32,
-          dataset_percent = 0.01,
-          call_back_patience = 20,
-          learning_rate = 0.0001,
-          model_optimiser='SGD',
-          out_file_name = '32_SGD'):
-
-    df1 = open_df(path, 1)
-    df2 = open_df(path, 2)
-    df3 = open_df(path, 3)
-    df4 = open_df(path, 4)
-    df5 = open_df(path, 5)
-    df6 = open_df(path, 6)
-    df9 = open_df(path, 9)
-    df10 = open_df(path, 10)
-    df11 = open_df(path, 11)
-
-    df2_ = open_df_gibuu(path, 2)
-    df3_ = open_df_gibuu(path, 3)
-
-
-    if train_type=='both' or train_type == 'dann' or train_type == 'descr':
-        train = [df1, df2, df3, df4, df5, df6, df2_]
-        val= [df9, df10, df11, df3_]
-
-    elif train_type=='genie':
-        train = [df1, df2, df3, df4, df5, df6]
-        val= [df9, df10, df11]
-
-    elif train_type=='gibuu':
-        df7_ = open_df_gibuu(path, 7)
-        df5_ = open_df_gibuu(path, 5)
-        df6_ = open_df_gibuu(path, 6)
-        train = [df2_, df3_, df7_]
-        val= [df5_, df6_]
-
-    df_train = pd.concat(train)
-    df_train.index = range(len(df_train['file']))
-    df_val = pd.concat(val)
-    df_val.index = range(len(df_val['file']))
-
-    if train_type=='both' or train_type=='genie' or train_type=='gibuu':
-        model = 'default'
-    else:
-	model = train_type
-    model, history = train_mobilenetv2(df_train,
-                                       df_val,
-                                       train_type = model,
-                                       epochs= epochs,
-                                       dataset_percent = dataset_percent,
-                                       batch_size = batch_size,
-                                       call_back_patience = call_back_patience,
-                                       learning_rate = learning_rate,
-                                       model_optimiser = model_optimiser,
-                                       out_file_name = out_file_name)
 
 
 
-def test(weights_file, path, name, data = 'both', model_type = 'default', output = 'default'):
 
-    index_list = []
-    test_labels_list =[]
-    weight_index = []
-    event_list = []
+def test(weights_file, path, name, dataset_percent = 0.1, data = 'both', model_type = 'default', output = 'default'):
 
-    probabilities  =[]
-    layer_nodes = []
-
+    probabilities =[]
+    layer_nodes = []    
     batch_no = 32
 
-    if data =='both':
-        df7 = open_df(path, 7)
-        df8 = open_df(path, 8)
-
-        df14_ = open_df_gibuu(path, 14)
-
-        test = [df7, df8, df14_]
-
-    elif data =='genie':
-        df7 = open_df(path, 7)
-        df8 = open_df(path, 8)
-        test = [df7, df8]
-
-    elif data =='gibuu':
-        df14_ = open_df_gibuu(path, 14)
-        df15_ = open_df_gibuu(path, 15)
-        test = [df14_, df15_]
-    elif data =='genie':
-        df7 = open_df(path, 7)
-        df8 = open_df(path, 8)
-        test = [df7, df8]
-
-    elif data =='gibuu':
-        df14_ = open_df_gibuu(path, 14)
-        df15_ = open_df_gibuu(path, 15)
-        test = [df14_, df15_]
-
-
-    df_test = pd.concat(test)
+    df_test = open_df(path, 'test_equal')
     df_test.index = range(len(df_test['file']))
-
-    steps_per_epoch = round(len(df_test['file'])/(batch_no+1))*0.01
-
-
+    df_test =df_test.sample(frac=1).reset_index(drop=True)
+    steps_per_epoch = round(len(df_test['file'])*dataset_percent)
+    
+    columns = df_test.columns    
+    df_row = pd.DataFrame(columns = columns)
 
     if model_type == 'default':
         model = MobileNetV2(input_shape=((2, 80, 100),), classes=3, )
@@ -249,45 +152,40 @@ def test(weights_file, path, name, data = 'both', model_type = 'default', output
     elif model_type == 'dann':
         model = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2)
 
-    model.load_weights('/home/ishokar/feb_test/output_weights' + weights_file)
+    model.load_weights('/home/ishokar/old_test/output_weights' + weights_file)
 
     steps = 0
-    for data, test_labels_list_0, weight_index_0, event_list_0 in test_generator(batch_no, steps_per_epoch, df_test, data, model_type):
-        steps+=1
-        if output == 'nodes':
-            intermediate_layer_model = Model(inputs=model.input,outputs=model.layers[-3].output)
-            layer_nodes_0 = intermediate_layer_model.predict(data)
+    for data, row_0 in islice(test_generator(1, 1, df_test, data, model_type), steps_per_epoch):
+        df_row.loc[steps] = row_0
 
+        data = data.reshape((1, 2, 80, 100))
+        probabilities_0 = model.predict(data, steps = 1)
+        probabilities.append(probabilities_0)
+
+        intermediate_layer_model = Model(inputs=model.input,outputs=model.layers[-3].output)
+        layer_nodes_0 = intermediate_layer_model.predict(data)
+        layer_nodes.append(layer_nodes_0)
+        
+        if model_type == 'default':
+            lab = df_row.loc[steps]['label']
         else:
-            probabilities_0 = model.predict(data, steps = batch_no)
+            lab = df_row.loc[steps]['label']
+        print(steps,'/', steps_per_epoch, ':', round((steps*100)/steps_per_epoch, 2), '%,', probabilities_0[0], lab) 
+        steps+=1
+    
+    pkl.dump(layer_nodes, open('files_new/nodes_values_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
+    pkl.dump(probabilities, open('files_new/test_probabilities_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
+    pkl.dump(df_row, open('files_new/test_df_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
 
-        for i in range(batch_no):
-            test_labels_list.append(test_labels_list_0[i])
-            weight_index.append(weight_index_0[i])
-            event_list.append(event_list_0[i])
+    index = []
+    for i , prob in enumerate(probabilities):
+        gibuu = prob[0][1]
+        if gibuu<0.2:
+            index.append(i)
 
-            if output == 'nodes':
-               layer_nodes.append(layer_nodes_0[i])
-            else:
-               probabilities.append(probabilities_0[i])
+    df2 = pd.DataFrame(columns = df_row.columns)
+    for i, j in enumerate(index):
+        df2.loc[i] = df_row.loc[j]
 
-        print(round((steps*100)/steps_per_epoch, 2), '%')
-        if steps==steps_per_epoch:
-            break
-
-    if output == 'nodes':
-        with open('files/nodes_values_{}.pkl'.format(i[8:-3]),'wb') as f1:
-            pkl.dump(layer_nodes, f1)
-
-    else:
-	with open('files/test_probabilities{}_{}.pkl'.format(name, weights_file[8:-3]),'wb') as f1:
-            pkl.dump(probabilities, f1)
-
-    with open('files/nodes_events_{}.pkl'.format(weights_file[8:-3]),'wb') as f2:
-        pkl.dump(event_list, f2)
-
-    with open('files/test_labels_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb') as f3:
-        pkl.dump(test_labels_list, f3)
-
-    with open('files/test_weights_list_short_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb') as f4:
-        pkl.dump(weight_index, f4)
+    df2 = index_finder(df_in)
+    pkl.dump(df2, open('df_physics.pkl','wb)
