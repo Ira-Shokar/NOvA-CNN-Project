@@ -3,18 +3,17 @@ import numpy as np
 import copy
 import pandas as pd
 import random
+import pickle as pkl
 import mobilenetv2
 import tensorflow as tf
 import keras
 from keras.optimizers import SGD, Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-
 def encode_event(array, i):
     """encode_event
     Function that takes in an hdf5 array and an index gives the run, subrun, evt, subevt, cycle of an event
     and returnsthem as a string for quick lookups
-
     # Arguments
         array: branch from the hdf5 files
         i: index within the array
@@ -52,7 +51,6 @@ def get_files(path):
 def data(file):
     """data
     Function that extracts the data from the hdf5 file and returns the relevant data
-
     # Arguments
         file: hdf5 file name
     # Returns
@@ -89,7 +87,6 @@ def data(file):
 def mu_cuts(f, file):
     """
     Function that takes in an hdf5 file and creates a list of events that do not pass the nu mu cuts:
-
     nu mu cuts defined - "CAFAna/Cuts/NumuCuts2018.h"
         cuts used - kNumuQuality && kNumuContainFD2017
     """
@@ -107,7 +104,7 @@ def mu_cuts(f, file):
     cut = [encode_event(sel_remid, i) for i in len(en_numu['trkccE']) if en_numu['trkccE'][i]<=0]
     s = encode_event(cut, i)
     if s not in cut_arr_mu:
-	cut_arr_mu.append(s)
+        cut_arr_mu.append(s)
 
     sel_remid = f['rec.sel.remid']
     for i in range(len(sel_remid['pid'])):
@@ -173,7 +170,6 @@ def mu_cuts(f, file):
 def apply_cuts(Train_Params, cut_arr, file):
     """apply_cuts
     Function that the list of cut events and removes them from the mctruth events dictionary
-
     # Arguments
         Train_Params: the dictionary of events containing iscc and pdg data
         cut_arr: the list of events that did not pass the cuts
@@ -227,7 +223,6 @@ def apply_cuts(Train_Params, cut_arr, file):
 def e_cuts(f, file):
     """e_cuts
     Function that takes in an hdf5 file and creates a list of events that do not pass the nu e cuts:
-
     nu mu cuts defined - "CAFAna/Cuts/NueCuts2017.h"
         cuts used - kNue2017NDFiducial && kNue2017NDContain && kNue2017NDFrontPlanes
     """
@@ -309,7 +304,6 @@ def image(maps):
 def event(data, label):
     """event
     Function that takes in an array of event images and displays them
-
     # Arguments
         data: image array
         i: index within the array
@@ -351,10 +345,11 @@ def open_df_gibuu(path, num):
             pass
 
 
-def generator(batch_size, steps_per_epoch, dataset, val= 'train', data='both'):
+def generator(batch_size, steps_per_epoch, dataset, model = 'default', val = 'train'):
 
     batch_images = np.zeros((batch_size, 2, 80, 100))
     batch_labels = np.zeros((batch_size, 3))
+    batch_events = np.zeros((batch_size, 2))
     steps = 0
 
     while True:
@@ -362,260 +357,91 @@ def generator(batch_size, steps_per_epoch, dataset, val= 'train', data='both'):
 
         for index in range(len(dataset['file'])):
             row = dataset.loc[index]
-            weight = float(row['weight'])
 
-            rand = 20*random.random()
-            rand2, rand3, rand4  = random.random(), random.random(), random.random()
+            images = image(maps(row['file'])[row['train_index']])
+            images = (images - np.min(images))/ (np.max(images) - np.min(images))
+            images.astype(float)
 
-            if val == 'train':
-                threshold = 0.75
-            else:
-                threshold = 0.875
+            if abs(row['label']- 1) <=10**(-5):
+                labels = [1, 0, 0]
+            elif abs(row['label']- 2) <=10**(-5):
+                labels = [0, 1, 0]
+            elif abs(row['label']- 3) <=10**(-5):
+                labels = [0, 0, 1]
 
-            if data != 'both':
-                threshold = 0
+            if '_genie_' in str(row['file']):
+                events = [1, 0]
+            elif 'gibuu' in str(row['file']):
+                events = [0, 1]
 
-            if ('gibuu' in str(row['file']) and weight<=rand) or \
-               (rand2 <= 0.98 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
-               (rand3 <= 0.82 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)) or \
-               (rand4 <= threshold and 'gibuu' in str(row['file'])):
-                pass
+            batch_images[steps%batch_size] = images
+            batch_labels[steps%batch_size] = labels
+            batch_events[steps%batch_size] = events
+            steps+=1
 
-            else:
-                images = image(maps(row['file'])[row['train_index']])
-                images = (images - np.min(images))/ (np.max(images) - np.min(images))
-
-                if abs(row['label']- 1) <=10**(-5):
-                    labels = [1, 0, 0]
-                elif abs(row['label']- 2) <=10**(-5):
-                    labels = [0, 1, 0]
-                elif abs(row['label']- 3) <=10**(-5):
-                    labels = [0, 0, 1]
-
-                batch_images[steps%batch_size] = images
-                batch_labels[steps%batch_size] = labels
-
-                steps+=1
-
-                if steps%batch_size==0 and steps!=0:
+            if steps%batch_size==0 and steps!=0:
+                if model== 'default':
                     yield batch_images, batch_labels
+                elif model== 'descr':
+                    yield batch_images, batch_events
+                elif model== 'dann':
+                    yield batch_images, [batch_labels, batch_events]
+          
 
-                    
-
-def descriminator_generator(batch_size, steps_per_epoch, dataset, val='train'):
-
-    batch_images = np.zeros((batch_size, 2, 80, 100))
-    batch_labels = np.zeros((batch_size, 2))
-    steps = 0
-
-    while True:
-        dataset = dataset.sample(frac=1).reset_index(drop=True)
-
-        for index in range(len(dataset['file'])):
-            row = dataset.loc[index]
-            weight = float(row['weight'])
-
-            rand = 20*random.random()
-            rand2, rand3, rand4  = random.random(), random.random(), random.random()
-
-            if val == 'train':
-                threshold = 0.75
-            else:
-                threshold = 0.875
-
-            if ('gibuu' in str(row['file']) and weight<=rand) or \
-               (rand2 <= 0.98 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
-               (rand3 <= 0.82 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)) or \
-               (rand4 <= threshold and 'gibuu' in str(row['file'])):
-                pass
-
-            else:
-                images = image(maps(row['file'])[row['train_index']])
-                images = (images - np.min(images))/ (np.max(images) - np.min(images))
-
-                if '_genie_' in str(row['file']):
-                    labels = [1, 0]
-                elif 'gibuu' in str(row['file']):
-                    labels = [0, 1]
-
-                batch_images[steps%batch_size] = images
-                batch_labels[steps%batch_size] = labels
-
-                steps+=1
-
-                if steps%batch_size==0 and steps!=0:
-                    yield batch_images, batch_labels
-
-
-
-
-def dann_generator(batch_size, steps_per_epoch, dataset, val='train'):
-
-    batch_images = np.zeros((batch_size, 2, 80, 100))
-    batch_class_labels = np.zeros((batch_size, 3))
-    batch_source_labels = np.zeros((batch_size, 2))
-    steps = 0
-
-    while True:
-        dataset = dataset.sample(frac=1).reset_index(drop=True)
-
-        for index in range(len(dataset['file'])):
-            row = dataset.loc[index]
-            weight = float(row['weight'])
-
-            rand = 20*random.random()
-            rand2, rand3, rand4  = random.random(), random.random(), random.random()
-
-            if val == 'train':
-                threshold = 0.75
-            else:
-                threshold = 0.875
-
-            if ('gibuu' in str(row['file']) and weight<=rand) or \
-               (rand2 <= 0.98 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
-               (rand3 <= 0.82 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)) or \
-               (rand4 <= threshold and 'gibuu' in str(row['file'])):
-                pass
-
-            else:
-                images = image(maps(row['file'])[row['train_index']])
-                images = (images - np.min(images))/ (np.max(images) - np.min(images))
-
-
-                if abs(row['label']- 1) <=10**(-5):
-                    labels = [1, 0, 0]
-                elif abs(row['label']- 2) <=10**(-5):
-                    labels = [0, 1, 0]
-                elif abs(row['label']- 3) <=10**(-5):
-                    labels = [0, 0, 1]
-
-                if '_genie_' in str(row['file']):
-                    source = [1, 0]
-                elif 'gibuu' in str(row['file']):
-                    source = [0, 1]
-
-                batch_images[steps%batch_size] = images
-                batch_class_labels[steps%batch_size] = labels
-                batch_source_labels[steps%batch_size] = source
-
-                steps+=1
-
-                if steps%batch_size==0 and steps!=0:
-                    yield batch_images, [batch_class_labels, batch_source_labels]
 
 
 def test_generator(batch_size, steps_per_epoch, dataset, data='both', model_type = 'default'):
 
-    batch_images = np.zeros((batch_size, 2, 80, 100))
-    labels = []
-    weight_index = []
-    event_list = []
-    steps = 0
-
-    while True:
-        dataset = dataset.sample(frac=1).reset_index(drop=True)
-
-        for index in range(len(dataset['file'])):
-            row = dataset.loc[index]
-            weight = float(row['weight'])
-            rand = 20*random.random()
-            rand2, rand3, rand4  = random.random(), random.random(), random.random()
-
-            if data != 'both':
-                threshold = 0
-            else:
-                threshold = 0.92
-
-            if ('gibuu' in str(row['file']) and weight<=rand) or \
-               (rand2 <= 0.98 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
-               (rand3 <= 0.82 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)) or \
-               (rand4 <= threshold and 'gibuu' in str(row['file'])):
-                pass
-
-            else:
-                images = image(maps(row['file'])[row['train_index']])
-                images = (images - np.min(images))/ (np.max(images) - np.min(images))
-
-                if '_genie_' in str(row['file']):
-                    mc = [1, 0]
-                elif 'gibuu' in str(row['file']):
-                    mc = [0, 1]
-
-                if abs(row['label']- 1) <=10**(-5):
-                    label = [1, 0, 0]
-                elif abs(row['label']- 2) <=10**(-5):
-                     label = [0, 1, 0]
-                elif abs(row['label']- 3) <=10**(-5):
-                     label = [0, 0, 1]
-
-                labels.append(label)
-                weight_index.append(row['weight'])
-                event_list.append(mc)
-
-                steps+=1
-
-                if steps%batch_size==0 and steps!=0:
-                    yield batch_images, labels, weight_index, event_list
-                    labels = []
-                    weight_index = []
-                    event_list = []  
-
-			
-def equal_data_generator(dataset, method):
-    dataframe = pd.DataFrame(columns=dataset.columns)
-    steps = 0
-    dataset = dataset.sample(frac=1).reset_index(drop=True)
-    a = b= c= d= e= 0
-
-
     for index in range(len(dataset['file'])):
         row = dataset.loc[index]
         weight = float(row['weight'])
-        rand = 10*random.random()
-        rand2, rand3, rand4  = random.random(), random.random(), random.random()
+        file = str(row['file'])
+    
+        rand = 0
+        rand2, rand3 = 1, 1
 
-        if method == 'train':
-            val1 = 0.7529
-            val2 = 0.9762
-            val3 = 0.8876
-
-        elif method == 'val':
-            val1 = 0.8457
-            val2 = 0.9762
-            val3 = 0.8876
-	
-	elif method == 'test':
-            val1 = 0.6752
-            val2 = 0.9767
-            val3 = 0.8981
-
-        if ('gibuu' in str(row['file']) and weight<=rand) or \
-            (rand4 <= val1 and 'gibuu' in str(row['file'])) or\
-            (rand2 <= val2 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
-            (rand3 <= val3 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)):
-            steps+=1
+        if (weight<= rand and 'gibuu' in file) or \
+            (rand2 <= 0.98 and abs(float(dataset.loc[index]['label'])-3)<=10**(-5)) or \
+            (rand3 <= 0.82 and abs(float(dataset.loc[index]['label'])-1)<=10**(-5)):
             pass
-
-
+        
         else:
             images = image(maps(row['file'])[row['train_index']])
             images = (images - np.min(images))/ (np.max(images) - np.min(images))
 
+            if '_genie_' in file:
+                 mc = [1, 0]
+            elif 'gibuu' in file:
+                 mc = [0, 1]
+
             if abs(row['label']- 1) <=10**(-5):
-                a+=1
+                label = [1, 0, 0]
             elif abs(row['label']- 2) <=10**(-5):
-                b+=1
+                label = [0, 1, 0]
             elif abs(row['label']- 3) <=10**(-5):
-                c+=1
+                label = [0, 0, 1]
 
-            if '_genie_' in str(row['file']):
-                d+=1
-            elif 'gibuu' in str(row['file']):
-                e+=1
+            yield images, row
 
-            steps+=1
-            print('{} %, Nu_mu: {}, Nu_e: {}, NC: {}, Genie: {}, Gibuu: {},'.format(round(step*100/dataset_len, 3), c, b, a, d ,e))
+			
 
-            dataframe.append(row)
+def index_finder(df):
+    for index, evt in enumerate(df['evt']):
+        file = df['file'][index]
+        f = h5py.File(file ,'r')
+        mc = f['rec.mc.nu']
+        columns = [str(i) for i in mc.keys()]
+        df_out = pd.DataFrame(columns = columns)
 
-    return dataframe
+        for count, val in enumerate(mc['evt']):
+            if int(val) == int(evt):
+                if int(mc['subevt'][count]) ==  int(df['subevt'][index]):
+                    mc_index = count
+                    break
+            elif int(val)>=int(evt)+1:
+                break
+        row = [mc[str(i)][mc_index][0] for i in mc.keys()]
+        df_out.loc[index] = row
+
+    return df_out
+
