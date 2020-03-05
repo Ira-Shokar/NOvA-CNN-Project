@@ -329,6 +329,14 @@ def event(data, label):
 
 
 def open_df(path, num):
+    """open_df
+    Function that takes in a folder path and a number and unpickles the assosiated dataframe
+    # Arguments
+        path: path to the folder containing pickled dataframes
+        num: dataframe number, e.g. df_1.pkl
+    # Returns
+	the dataframe containing the associated data
+    """
     with open(path+ 'df_{}.pkl'.format(num),'rb') as file:
         df = pkl.load(file)
     return df
@@ -336,17 +344,37 @@ def open_df(path, num):
 
 
 def open_df_gibuu(path, num):
+    """open_df_gibuu
+    Function that takes in a folder path and a number and unpickles the assosiated dataframe
+    # Arguments
+        path: path to the folder containing pickled dataframes
+        num: dataframe number, e.g. df_gibuu_1.pkl
+    # Returns
+	the dataframe containing the associated data
+    """
     with open(path+ 'df_gibuu_{}.pkl'.format(num), 'rb') as file:
         try:
             df = pkl.load(file)
             return df
+        #some gibuu file dataframes were not correctly saved, leading to Unpickling Errors
         except pkl.UnpicklingError:
             print('Unpickling Error with gibuu df file {}'.format(num))
             pass
 
 
-def generator(batch_size, steps_per_epoch, dataset, model = 'default', val = 'train'):
-
+def generator(batch_size, steps_per_epoch, dataset, model = 'default'):
+    """generator
+    Generator function that yeilds a tensor contraining image data and the associated lables to be called by the keras 
+    in training of the model
+    # Arguments
+        batch_size: path to the folder containing pickled dataframes
+        steps_per_epoch: dataframe number, e.g. df_gibuu_1.pkl
+        dataset: 
+        model: 
+        val: 
+    # Returns
+	the dataframe containing the associated data
+    """
     batch_images = np.zeros((batch_size, 2, 80, 100))
     batch_labels = np.zeros((batch_size, 3))
     batch_events = np.zeros((batch_size, 2))
