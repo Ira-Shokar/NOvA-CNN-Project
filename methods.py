@@ -109,9 +109,9 @@ def train(train_type = 'default',
         mobnetmodel = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=2)
         mobnetmodel.compile(optimizer=opt, loss='binary_crossentropy',metrics=['accuracy'])
 
-    history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, model = train_type, val = 'train'),
+    history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, model = train_type),
                                         steps_per_epoch= steps_per_epoch,
-                                        validation_data= generator(batch_size, val_steps_per_epoch, df_val, model = train_type, val = 'val'),
+                                        validation_data= generator(batch_size, val_steps_per_epoch, df_val, model = train_type),
                                         validation_steps= val_steps_per_epoch,
                                         epochs=epochs,
                                         callbacks = callbacks)
