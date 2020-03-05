@@ -57,7 +57,7 @@ def MobileNetV2(input_shape=None,
         img_input_jitter = GaussianDropout(jitter)(img_input)
         shaped = Reshape(re_shape)(img_input_jitter)
     else:
-	shaped = Reshape(re_shape)(img_input)
+        shaped = Reshape(re_shape)(img_input)
     def _lambda_unstack(x):
         import tensorflow as tf
         return tf.unstack(x,axis=1)
@@ -70,7 +70,7 @@ def MobileNetV2(input_shape=None,
     if(re_shape[0] == 4):
         img_input = [img_input1, img_input2, img_input3, img_input4]
     else:
-	img_input  = [img_input1, img_input2]
+        img_input  = [img_input1, img_input2]
 
     branches = []
     names = ['x','y','px','py']
@@ -106,6 +106,7 @@ def MobileNetV2(input_shape=None,
 
 def MobileNetV2_DANN(input_shape=None,
                     re_shape=(2,100,80,1),
+                    DANN_strength = 0.1,
                     alpha=0.25,
                     depth_multiplier=1,
                     classifier_classes=3,
@@ -132,7 +133,7 @@ def MobileNetV2_DANN(input_shape=None,
         img_input_jitter = GaussianDropout(jitter)(img_input)
         shaped = Reshape(re_shape)(img_input_jitter)
     else:
-	shaped = Reshape(re_shape)(img_input)
+        shaped = Reshape(re_shape)(img_input)
     def _lambda_unstack(x):
         import tensorflow as tf
         return tf.unstack(x,axis=1)
@@ -145,7 +146,7 @@ def MobileNetV2_DANN(input_shape=None,
     if(re_shape[0] == 4):
         img_input = [img_input1, img_input2, img_input3, img_input4]
     else:
-	img_input  = [img_input1, img_input2]
+        img_input  = [img_input1, img_input2]
 
     branches = []
     names = ['x','y','px','py']
@@ -205,7 +206,7 @@ def reverse_gradient(X, hp_lambda):
 
     @tf.RegisterGradient(grad_name)
     def _flip_gradients(op, grad):
-        return [tf.negative(grad) * hp_lambda]
+        return [tf.negative(grad) *0.5* hp_lambda]
 
     g = get_session().graph
     with g.gradient_override_map({'Identity': grad_name}):
@@ -324,7 +325,7 @@ def _bottleneck(inputs, filters, kernel, t, s, r=False, alpha=1.0, block_id=1, t
                     name=name+'conv_pw_{}'.format(block_id))(x)
     x = BatchNormalization(axis=channel_axis, name=name+'conv_pw_{}_bn'.format(block_id))(x, training=train_bn)
     if r:
-	x = add([x, inputs], name=name+'res{}'.format(block_id))
+        x = add([x, inputs], name=name+'res{}'.format(block_id))
     return x
 
 def _inverted_residual_block(inputs, filters, kernel, t, strides, n, alpha, block_id, name=''):
