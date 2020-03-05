@@ -371,14 +371,14 @@ def generator(batch_size, steps_per_epoch, dataset, model = 'default'):
         steps_per_epoch: dataframe number, e.g. df_gibuu_1.pkl
         dataset: 
         model: 
-        val: 
     # Returns
-	the dataframe containing the associated data
+	batch_images:
+	batch_labels:
+	batch_events: 
     """
     batch_images = np.zeros((batch_size, 2, 80, 100))
     batch_labels = np.zeros((batch_size, 3))
     batch_events = np.zeros((batch_size, 2))
-    steps = 0
 
     while True:
         dataset = dataset.sample(frac=1).reset_index(drop=True)
@@ -402,12 +402,11 @@ def generator(batch_size, steps_per_epoch, dataset, model = 'default'):
             elif 'gibuu' in str(row['file']):
                 events = [0, 1]
 
-            batch_images[steps%batch_size] = images
-            batch_labels[steps%batch_size] = labels
-            batch_events[steps%batch_size] = events
-            steps+=1
+            batch_images[index%batch_size] = images
+            batch_labels[index%batch_size] = labels
+            batch_events[index%batch_size] = events
 
-            if steps%batch_size==0 and steps!=0:
+            if index%batch_size==0 and index!=0:
                 if model== 'default':
                     yield batch_images, batch_labels
                 elif model== 'descr':
