@@ -57,14 +57,13 @@ def cuts(path):
 
 
 
-def train(path,
-          train_type = 'default',
+def train(train_type = 'default',
           epochs= 200,
           batch_size = 32,
           dataset_percent = 0.8,
           call_back_patience = 10,
           learning_rate = 0.001,
-          DANN_strength = 0.1
+          DANN_strength = 0.1, 
           model_optimiser='SGD',
           out_file_name = '32_SGD'):
 
@@ -80,7 +79,7 @@ def train(path,
 	mobnetmodel: trained model
         history : training statistics
     """
-
+    path = '/home/ishokar/dataframes/'
     df_train = open_df(path, 'train_equal')
     df_train.index = range(len(df_train['file']))
     steps_per_epoch = round(len(df_train['file'])/(batch_size)*dataset_percent)
@@ -99,7 +98,7 @@ def train(path,
     callbacks = [EarlyStopping(monitor='accuracy', patience=call_back_patience)]
 
     if train_type == 'dann':
-        mobnetmodel = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2, DANN_strength)
+        mobnetmodel = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2, DANN_strength = DANN_strength)
         mobnetmodel.compile(optimizer=opt, loss='categorical_crossentropy',metrics=['accuracy'])
 
     elif train_type== 'default':
@@ -110,9 +109,9 @@ def train(path,
         mobnetmodel = mobilenetv2.MobileNetV2(input_shape=((2, 80, 100),), classes=2)
         mobnetmodel.compile(optimizer=opt, loss='binary_crossentropy',metrics=['accuracy'])
 
-    history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, train_type),
+    history = mobnetmodel.fit_generator(generator=generator(batch_size, steps_per_epoch, df_train, model = train_type, val = 'train'),
                                         steps_per_epoch= steps_per_epoch,
-                                        validation_data= generator(batch_size, val_steps_per_epoch, df_val, val='val', train_type),
+                                        validation_data= generator(batch_size, val_steps_per_epoch, df_val, model = train_type, val = 'val'),
                                         validation_steps= val_steps_per_epoch,
                                         epochs=epochs,
                                         callbacks = callbacks)
@@ -152,7 +151,7 @@ def test(weights_file, path, name, dataset_percent = 0.1, data = 'both', model_t
     elif model_type == 'dann':
         model = MobileNetV2_DANN(input_shape=((2, 80, 100),), classifier_classes=3, descriminator_classes = 2)
 
-    model.load_weights('/home/ishokar/old_test/output_weights' + weights_file)
+    model.load_weights('/home/ishokar/march_test/output_weights' + weights_file)
 
     steps = 0
     for data, row_0 in islice(test_generator(1, 1, df_test, data, model_type), steps_per_epoch):
@@ -188,4 +187,5 @@ def test(weights_file, path, name, dataset_percent = 0.1, data = 'both', model_t
         df2.loc[i] = df_row.loc[j]
 
     df2 = index_finder(df_in)
-    pkl.dump(df2, open('df_physics.pkl','wb)
+    pkl.dump(df2, open('df_physics.pkl','wb'))
+
