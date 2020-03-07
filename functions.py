@@ -452,7 +452,49 @@ def test_generator(batch_size, steps_per_epoch, dataset, data='both', model_type
 
 			
 
-def index_finder(df):
+def index_finder(probabilities, df_row):
+	
+    genie_index_below = []
+    genie_index_above = []
+    gibuu_index_below = []
+    gibuu_index_above = []
+	
+    for i , prob in enumerate(probabilities):
+        genie = prob[0][0]
+	gibuu = prob[0][1]
+        if gibuu<0.2:
+            gibuu_index_below.append(i)
+	elif gibuu>0.4 and gibuu<0.7:
+	    gibuu_index_above.append(i)
+	if genie<0.2:
+            genie_index_below.append(i)
+	elif genie>0.4 and gibuu<0.7:
+	    genie_index_above.append(i)
+		
+    df_genie_below = pd.DataFrame(columns = df_row.columns)
+    df_genie_above = pd.DataFrame(columns = df_row.columns)
+    df_gibuu_below = pd.DataFrame(columns = df_row.columns) 
+    df_gibuu_above = pd.DataFrame(columns = df_row.columns)
+	
+    for i, j in enumerate(genie_index_below):
+        df_genie_below.loc[i] = df_row.loc[j]
+	df_genie_below['type'] = ['genie below']*len(df_genie_below)
+	
+    for i, j in enumerate(genie_index_above):
+        df_genie_above.loc[i] = df_row.loc[j]
+	df_genie_above['type'] = ['genie above']*len(df_genie_above)
+	
+    for i, j in enumerate(gibuu_index_below):
+        df_gibuu_below.loc[i] = df_row.loc[j]
+	df_gibuu_below['type'] = ['gibuu below']*len(df_gibuu_below)
+	
+    for i, j in enumerate(gibuu_index_below):
+        df_gibuu_above.loc[i] = gibuu_index_above.loc[j]
+	df_gibuu_above['type'] = ['gibuu above']*len(df_gibuu_above)
+	
+    frames = [df_genie_below, df_genie_above, df_gibuu_below, df_gibuu_above]
+    df = pd.concat(frames)
+	
     for index, evt in enumerate(df['evt']):
         file = df['file'][index]
         f = h5py.File(file ,'r')
