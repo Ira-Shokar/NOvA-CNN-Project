@@ -175,17 +175,7 @@ def test(weights_file, path, name, dataset_percent = 0.1, data = 'both', model_t
     pkl.dump(layer_nodes, open('files_new/nodes_values_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
     pkl.dump(probabilities, open('files_new/test_probabilities_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
     pkl.dump(df_row, open('files_new/test_df_{}_{}.pkl'.format(name, weights_file[8:-3]),'wb'))
-
-    index = []
-    for i , prob in enumerate(probabilities):
-        gibuu = prob[0][1]
-        if gibuu<0.2:
-            index.append(i)
-
-    df2 = pd.DataFrame(columns = df_row.columns)
-    for i, j in enumerate(index):
-        df2.loc[i] = df_row.loc[j]
-
-    df2 = index_finder(df_in)
+	
+    df2 = index_finder(probabilities, df_row)
     pkl.dump(df2, open('df_physics.pkl','wb'))
 
