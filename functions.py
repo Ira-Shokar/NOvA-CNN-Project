@@ -489,7 +489,7 @@ def index_finder(probabilities, df_row):
 	df_gibuu_below['type'] = ['gibuu below']*len(df_gibuu_below)
 	
     for i, j in enumerate(gibuu_index_above):
-        df_gibuu_above.loc[i] = gibuu_index_above.loc[j]
+        df_gibuu_above.loc[i] = df_row.loc[j]
 	df_gibuu_above['type'] = ['gibuu above']*len(df_gibuu_above)
 	
     frames = [df_genie_below, df_genie_above, df_gibuu_below, df_gibuu_above]
