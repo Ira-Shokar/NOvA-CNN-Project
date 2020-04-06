@@ -494,6 +494,7 @@ def index_finder(probabilities, df_row):
 	
     frames = [df_genie_below, df_genie_above, df_gibuu_below, df_gibuu_above]
     df = pd.concat(frames)
+    df.index = range(len(df['file']))
 	
     for index, evt in enumerate(df['evt']):
         file = df['file'][index]
