@@ -374,4 +374,24 @@ def node_pe(node):
     plt.xlabel('Nu Mu classifer Output')
     plt.ylabel('Percentage')
     plt.title('Trained and Tested on Both Datasets')
-    plt.legend(['Purity', 'Efficiency', 'Purity* Efficiency'], loc='lower left')    
+    plt.legend(['Purity', 'Efficiency', 'Purity* Efficiency'], loc='lower left')
+    
+def domain_physics(text, bins):
+
+    plt.figure(figsize=(18,10))
+    (counts, bins) = np.histogram(df2[text], bins=bins)
+    factor = 1/(len(df2[text]))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label='Gibuu<0.2')
+
+    (counts, bins) = np.histogram(df3[text], bins=bins)
+    factor = 1/(len(df3[text]))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label= 'Genie<0.2')
+
+    (counts, bins) = np.histogram(df4[text], bins=bins)
+    factor = 1/(len(df4[text]))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label='0.4<Gibuu<0.7')
+    
+    plt.legend(prop={'size': 14})
+    plt.ylabel('Percentage of Data')
+    plt.xlabel(text)
+    plt.show()
