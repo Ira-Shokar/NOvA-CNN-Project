@@ -159,13 +159,13 @@ def classifier_output(probabilities, interaction) :
     factor = 1/(len(test_vals))
     
     (counts, bins) = np.histogram(mu_e, bins=100)
-    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label='nc_genie', linestyle=('solid'),color=('orange'))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('orange'))
 
     (counts, bins) = np.histogram(nc, bins=100)
-    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label='nc_genie', linestyle=('solid'),color=('b'))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('b'))
 
     (counts, bins) = np.histogram(nu_mu, bins=100)
-    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, label='nc_genie', linestyle=('solid'),color=('g'))
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('g'))
 
     plt.legend(['nc', 'nu_e','nu_mu'], loc='upper left')
     plt.ylabel('Percentage of test events')
