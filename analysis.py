@@ -158,12 +158,12 @@ def classifier_output(probabilities, interaction) :
     plt.figure(figsize=(25,10))
     factor = 1/(len(test_vals))
     
-    (counts, bins) = np.histogram(mu_e, bins=100)
-    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('orange'))
-
     (counts, bins) = np.histogram(nc, bins=100)
     plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('b'))
-
+    
+    (counts, bins) = np.histogram(mu_e, bins=100)
+    plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('orange'))
+    
     (counts, bins) = np.histogram(nu_mu, bins=100)
     plt.hist(bins[:-1], bins, weights=factor*counts, histtype='step', fill=False, linestyle=('solid'),color=('g'))
 
