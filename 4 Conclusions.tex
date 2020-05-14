@@ -1,0 +1,27 @@
+\onehalfspacing
+
+\section{Model Classification}
+
+\noindent This project was able to demonstrate that CNNs are effective tools that can be used to classify neutrino interaction types from image data supplied by MC event simulation generators. Analysis was able to show that there are significant differences in how the two generators GENIE and GiBUU simulate $NC$ and $\nu_e$ events, and these differences impact the classification of events when using a classifier has been trained on one generator and tested on the other/both, or if the classifier is trained on both. \medskip
+
+\noindent While the datasets used in this project were balanced, it is unsure whether applying these models to unbalanced test data provided at the near detector at NO$\va$A would produce results that are not reflective of reality- that over predict the occurrence of $NC$ and $\nu_e$ events due to their much larger prominence in the training data than is the case. Training unbalanced dataset is an ongoing difficulty of machine learning, and one where further research could be applied following on from this project.\medskip
+
+\noindent By analysing the penultimate dense layer activation values when test data was passed through the model, the physical properties of those events that contained domain bias was produced, giving insight into how deep learning classifiers of such events are made less accurate due a domain biases.
+
+\noindent By looking at using the same network architecture to produce a classifier that was able to discern the production source of events, the opportunity for a DANN to reduce this domain bias was displayed. A DANN network was trained using various gradient reversal strength factors and was able to improve the model robustness for $\nu_\mu$ events, but future work may lead to such improvements for $\nu_e$ events. The partial success DANN network stands as a proof of concept that the method can prove effective, and with more work, and more data, a DANN could be a very powerful tool to reduce domain bias in classification models.\medskip
+
+\section{Future Work}
+
+\noindent There are a number of potential avenues for future work following on from this project. One is looking at how penultimate layer analysis can be used to further the field of machine learning explain-ability. Machine learning, and in particular, deep learning algorithms are viewed as black boxes that are given inputs and produce outputs, but methods such as those attempted in this project display that insights into how these algorithms make their decisions can be interpreted.\medskip
+
+\noindent A potential technique to improve the classification accuracy of the model would be one in which chosen penultimate layer nodes were frozen out. This project did not allow the time to explore this, but by writing custom gradient layers, much like the gradient reversal layer implemented in the DANN, to zero back propagation from those selected nodes, but removing the impact of nodes that activated to indicate domain variation, may improve the classification result of the network if the classification features were the only ones that were used within the network.\medskip
+
+\noindent As with all supervised machine learning algorithms, improvements are made when more data is provided to the network in the training process. Further work would be to train classifiers, domain classifiers and DANN models with larger amounts of input data, and potentially better hard were to accelerate this process to reduce the problem of overfitting due to small amounts of data, leading the networks to pick up on statistical noise. An alternative to this, to reduce the ill-posed nature of the problem would be to attempt to use a network architecture with a smaller number of trainable parameters. This network may be less powerful than the MobileNet architecture base used in this project, however it would be far less susceptible to overfitting.\medskip
+
+\noindent Using a DANN to train inputs of both simulated data and detector data would be the next step to have a major impact at NO$\nu$A and improve the computer vision classifier already being used there to improve the accuracy of the data being used in neutrino oscillation calculations. \medskip
+
+\noindent Further work could be carried out into understanding the results of the DANN network, and how one may be able to improve the accuracy of the network. An alternate ADDA method has been produced by \cite{Tzeng}, that encodes the labels in the source domain and a separate encoding that maps target labels to the same space using a mapping learned though a domain-adversarial loss. This could be another avenue of research for the problem of domain bias reduction.\medskip
+
+\noindent In order to produce more training data there is the potential for a form of data augmentation, where small changes- an example would be a Gaussian blur, are applied to the training data to produce new training data from the original training set. This would be especially useful for $\nu_e$ events, where the proportion of data simulated at the near detector is much smaller than that of $\nu_\mu$ events.\medskip
+
+
