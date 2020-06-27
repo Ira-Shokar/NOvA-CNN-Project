@@ -1,10 +1,21 @@
-from functions import *
-from methods import *
+from scripts.functions import *
+from scripts.methods import *
+from scripts.mobilenetv2 import *
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pickle as pkl
-import matplotlib.pyplot as plt
+
 from sklearn import metrics
+from keras.models import Model
+from itertools import islice
+
+
+
+
+df2 = index_finder(probabilities, df_row)
+pkl.dump(df2, open('df_physics.pkl','wb'))
+
 
 def plot_history(path, file):
     
@@ -395,3 +406,10 @@ def domain_physics(text, bins):
     plt.ylabel('Percentage of Data')
     plt.xlabel(text)
     plt.show()
+    
+def produce_df():
+    with open('files_new/'+'test_probabilities_dann_train_100_descr_32_sgd_22_02.pkl','rb') as f1:
+        probabilities = pkl.load(f1)
+
+    with open('files_new/'+'test_df_dann_train_100_descr_32_sgd_22_02.pkl','rb') as f1:
+        df_row = pkl.load(f1)
