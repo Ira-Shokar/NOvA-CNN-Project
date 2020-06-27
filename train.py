@@ -1,4 +1,4 @@
-from methods import *
+from scripts.methods import *
 
 # model_optimiser options: 'Adam', 'SGD'
 
